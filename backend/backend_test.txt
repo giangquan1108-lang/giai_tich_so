@@ -1,0 +1,22 @@
+Testing mathematical expression parser with SymPy
+==================================================
+
+Test expressions to verify:
+1. x^2 - 4
+2. e^x - 3
+3. sin(x)
+4. cos(x)
+5. sqrt(x)
+6. ln(x)
+7. log(x)
+8. exp(x)
+9. sin(x)^2 + cos(x)^2
+10. pi*x
+11. x^3 - x - 2
+12. sqrt(x) - 2
+
+Error cases to verify:
+1. sin( -> should fail gracefully
+2. x*** -> should fail gracefully
+3. )( -> should fail gracefully
+4. abc@ -> should fail gracefully
