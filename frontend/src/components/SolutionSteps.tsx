@@ -255,7 +255,7 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
   );
 }
 
-function StepCard({ step, method, nCols }: { step: StepItem; method: string; nCols?: number }) {
+function StepCard({ step }: { step: StepItem; method?: string; nCols?: number }) {
   const phaseInfo = step.phase ? phaseColors[step.phase] : null;
 
   return (

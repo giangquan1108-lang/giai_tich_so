@@ -7,12 +7,13 @@ export default defineConfig({
   server: {
     allowedHosts: ['.ngrok-free.dev'],
     proxy: {
-      '/root-finding': 'http://localhost:8001',
-      '/nonlinear-system': 'http://localhost:8001',
-      '/linear-system': 'http://localhost:8001',
-      '/interpolation': 'http://localhost:8001',
-      '/integration': 'http://localhost:8001',
-      '/comparison': 'http://localhost:8001',
+      '/root-finding': 'http://localhost:8002',
+      '/nonlinear-system': 'http://localhost:8002',
+      '/linear-system': 'http://localhost:8002',
+      '/integration': 'http://localhost:8002',
+      '/matrix-inverse': 'http://localhost:8002',
+      '/matrix-decomposition': 'http://localhost:8002',
+      '/eigenvalues': 'http://localhost:8002',
     },
   },
 })

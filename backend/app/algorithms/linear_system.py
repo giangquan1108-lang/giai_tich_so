@@ -32,20 +32,35 @@ def _matrix_rank(M: List[List[float]], tol: float = 1e-12) -> int:
 
 
 def _analyze_system(A: List[List[float]], B: List[List[float]]) -> dict:
-    """Analyze the linear system: rank(A), rank([A|B_col0]), and solution type.
+    """Analyze the linear system: rank(A), rank([A|B_col]), and solution type.
 
-    Uses the first column of B for augmented-matrix analysis.
+    Checks ALL columns of B for consistency. If ANY column is inconsistent
+    (rank(A) < rank([A|B_col])), the entire system is inconsistent.
     """
     m = len(A)
     n = len(A[0]) if A else 0
     p = len(B[0]) if B else 0
     rank_A = _matrix_rank(A)
-    b0 = [B[i][0] for i in range(m)]
-    aug = [list(A[i]) + [b0[i]] for i in range(m)]
-    rank_aug = _matrix_rank(aug)
-    if rank_A < rank_aug:
+    
+    # Check consistency for EVERY column of B
+    max_rank_aug = rank_A
+    inconsistent_columns = []
+    for ci in range(p):
+        b_col = [B[i][ci] for i in range(m)]
+        aug_col = [list(A[i]) + [b_col[i]] for i in range(m)]
+        rank_aug_col = _matrix_rank(aug_col)
+        if rank_aug_col > max_rank_aug:
+            max_rank_aug = rank_aug_col
+        if rank_A < rank_aug_col:
+            inconsistent_columns.append(ci + 1)
+    
+    rank_aug = max_rank_aug
+    
+    if inconsistent_columns:
         solution_type = "inconsistent"
-        message = f"Vô nghiệm: rank(A)={rank_A} < rank([A|B])={rank_aug}"
+        cols_str = ", ".join(str(c) for c in inconsistent_columns)
+        message = (f"Vô nghiệm: rank(A)={rank_A} < rank([A|B_cột{{{cols_str}}}])={rank_aug}. "
+                   f"Hệ không nhất quán tại cột B thứ {cols_str}.")
     elif rank_A == n:
         solution_type = "unique"
         message = f"Nghiệm duy nhất: rank(A)={rank_A} = rank([A|B])={rank_aug} = số ẩn={n}"
@@ -408,11 +423,15 @@ def _solve_single_column_gaussian(A: List[List[float]], b: List[float], n: int, 
         "phase": "upper_triangular"
     })
 
-    # ---- Back substitution ----
+    # ---- Back substitution with inconsistency detection ----
     x = [0.0] * n
     if n > 0:
         for i in range(min(n, m) - 1, -1, -1):
             if all(abs(aug[i][j]) < 1e-15 for j in range(n)):
+                # Row is all zeros in A part. Check if B part is also zero.
+                if abs(aug[i][n]) > 1e-12:
+                    # 0·x₁ + ... + 0·x_n = b ≠ 0 → inconsistent!
+                    return None  # Signal inconsistency to caller
                 x[i] = 0.0
                 continue
             x[i] = aug[i][n]
@@ -469,6 +488,17 @@ def gaussian_elimination(A: List[List[float]], B: List[List[float]]) -> dict:
     steps = []
     pivot_info = []
 
+    # Early return if system is inconsistent (detected by _analyze_system over ALL columns)
+    if analysis["solution_type"] == "inconsistent":
+        steps.append({"step": 0, "description": analysis["message"]})
+        return {"success": True, "message": analysis["message"], "solution": None, "steps": steps,
+                "pivot_info": [], "execution_time": 0.0, "analysis": analysis,
+                "solution_type": "inconsistent", "rank_A": analysis["rank_A"],
+                "rank_augmented": analysis["rank_augmented"],
+                "free_variables": None, "particular_solution": None, "basis_vectors": None,
+                "general_solution_latex": None, "iterations": [], "iterations_count": 0, "final_error": 0.0,
+                "convergence_data": None}
+
     b0 = [B[i][0] for i in range(m)]
     aug0 = [list(A[i]) + [b0[i]] for i in range(m)]
     steps.append({"step": 0, "description": f"Augmented matrix [A|B_col1] ({m}×{n+1})",
@@ -481,30 +511,27 @@ def gaussian_elimination(A: List[List[float]], B: List[List[float]]) -> dict:
         b_col = [B[i][col_idx] for i in range(m)]
         x_col = _solve_single_column_gaussian(A, b_col, n, m, steps, pivot_info, col_idx=col_idx, p=p)
         if x_col is None:
-            return {"success": False, "message": f"Gaussian elimination failed for column {col_idx+1}",
+            # Back-substitution detected inconsistency (0·x = b ≠ 0)
+            steps.append({
+                "step": len(steps),
+                "description": f"Phát hiện mâu thuẫn tại cột B thứ {col_idx+1}: 0·x = b ≠ 0 → hệ vô nghiệm"
+            })
+            return {"success": True, "message": f"Hệ vô nghiệm: mâu thuẫn tại cột B thứ {col_idx+1}.",
                     "solution": None, "steps": steps, "pivot_info": pivot_info,
-                    "execution_time": round(time.time() - start_time, 6)}
+                    "execution_time": round(time.time() - start_time, 6), "analysis": analysis,
+                    "solution_type": "inconsistent", "rank_A": analysis["rank_A"],
+                    "rank_augmented": analysis["rank_augmented"],
+                    "free_variables": None, "particular_solution": None, "basis_vectors": None,
+                    "general_solution_latex": None, "iterations": [], "iterations_count": 0, "final_error": 0.0,
+                    "convergence_data": None}
         x_cols.append([round(xi, 10) for xi in x_col])
 
     execution_time = time.time() - start_time
 
-    # Determine solution type by rank comparison
+    # Determine solution type by rank comparison (used _analyze_system result)
+    rank_A_comp = analysis["rank_A"]
+    rank_aug_comp = analysis["rank_augmented"]
     aug_check = [list(A[i]) + [B[i][0]] for i in range(m)]
-    rank_A_comp = _matrix_rank([aug_check[i][:n] for i in range(m)])
-    rank_aug_comp = _matrix_rank(aug_check)
-
-    if rank_A_comp < rank_aug_comp:
-        # Inconsistent: rank(A) < rank([A|B])
-        steps.append({
-            "step": len(steps),
-            "description": f"rank(A) = {rank_A_comp} < rank([A|B]) = {rank_aug_comp} → hệ vô nghiệm"
-        })
-        return {"success": True, "message": analysis["message"], "solution": None, "steps": steps,
-                "pivot_info": pivot_info, "execution_time": round(execution_time, 6), "analysis": analysis,
-                "solution_type": "inconsistent", "rank_A": rank_A_comp, "rank_augmented": rank_aug_comp,
-                "free_variables": None, "particular_solution": None, "basis_vectors": None,
-                "general_solution_latex": None, "iterations": [], "iterations_count": 0, "final_error": 0.0,
-                "convergence_data": None}
 
     if rank_A_comp < n:
         # Infinite solutions

@@ -126,6 +126,8 @@ export interface MatrixInverseResponse {
   message: string;
   determinant?: number;
   rank?: number;
+  singular_values?: number[];
+  condition_number?: number;
   inverse?: number[][];
   inverse_latex?: string;
   verification?: number[][];

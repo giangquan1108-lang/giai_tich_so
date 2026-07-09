@@ -3,27 +3,20 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import SearchIcon from '@mui/icons-material/Search';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import LinearScaleIcon from '@mui/icons-material/LinearScale';
-import TimelineIcon from '@mui/icons-material/Timeline';
 import FunctionsIcon from '@mui/icons-material/Functions';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import InfoIcon from '@mui/icons-material/Info';
+import InvertColorsIcon from '@mui/icons-material/InvertColors';
+import GridOnIcon from '@mui/icons-material/GridOn';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 export interface ModuleEntry {
-  /** Menu item text (Sidebar) */
   text: string;
-  /** Card title (Dashboard) */
   title: string;
-  /** Card description (Dashboard) */
   description: string;
-  /** Route path */
   path: string;
-  /** Icon element (shared by Sidebar & Dashboard) */
   icon: ReactNode;
-  /** Card accent color (Dashboard) — falls back to primary */
   color?: string;
-  /** If false, exclude from Dashboard cards (e.g. Dashboard itself) */
   showInDashboard: boolean;
-  /** If false, exclude from Sidebar */
   showInSidebar: boolean;
 }
 
@@ -69,12 +62,32 @@ export const modules: ModuleEntry[] = [
     showInSidebar: true,
   },
   {
-    text: 'Nội suy',
-    title: 'Nội suy',
-    description: 'Lagrange, Newton Forward/Backward, Divided Differences',
-    path: '/interpolation',
-    icon: <TimelineIcon sx={{ fontSize: 48 }} />,
+    text: 'Ma trận nghịch đảo',
+    title: 'Ma trận nghịch đảo A⁻¹',
+    description: 'Gauss-Jordan, Adjoint, LU, Cholesky, Pseudoinverse SVD',
+    path: '/matrix-inverse',
+    icon: <InvertColorsIcon sx={{ fontSize: 48 }} />,
+    color: '#c62828',
+    showInDashboard: true,
+    showInSidebar: true,
+  },
+  {
+    text: 'Phân tách ma trận',
+    title: 'Phân tách ma trận',
+    description: 'LU, Cholesky, QR, SVD, Schur Decomposition',
+    path: '/matrix-decomposition',
+    icon: <GridOnIcon sx={{ fontSize: 48 }} />,
     color: '#e65100',
+    showInDashboard: true,
+    showInSidebar: true,
+  },
+  {
+    text: 'Trị riêng & Vector riêng',
+    title: 'Trị riêng & Vector riêng',
+    description: 'Characteristic Polynomial, Power, Inverse Power, Rayleigh, QR, Jacobi',
+    path: '/eigenvalues',
+    icon: <VisibilityIcon sx={{ fontSize: 48 }} />,
+    color: '#00695c',
     showInDashboard: true,
     showInSidebar: true,
   },
@@ -84,16 +97,6 @@ export const modules: ModuleEntry[] = [
     description: 'Trapezoidal, Simpson 1/3, Simpson 3/8, Romberg',
     path: '/integration',
     icon: <FunctionsIcon sx={{ fontSize: 48 }} />,
-    color: '#00695c',
-    showInDashboard: true,
-    showInSidebar: true,
-  },
-  {
-    text: 'So sánh thuật toán',
-    title: 'So sánh thuật toán',
-    description: 'So sánh hiệu năng các phương pháp khác nhau',
-    path: '/comparison',
-    icon: <CompareArrowsIcon sx={{ fontSize: 48 }} />,
     color: '#283593',
     showInDashboard: true,
     showInSidebar: true,

@@ -8,9 +8,10 @@ import Dashboard from './pages/Dashboard';
 import RootFinding from './pages/RootFinding';
 import NonlinearSystem from './pages/NonlinearSystem';
 import LinearSystem from './pages/LinearSystem';
-import Interpolation from './pages/Interpolation';
+import MatrixInverse from './pages/MatrixInverse';
+import MatrixDecomposition from './pages/MatrixDecomposition';
+import Eigenvalues from './pages/Eigenvalues';
 import Integration from './pages/Integration';
-import Comparison from './pages/Comparison';
 import About from './pages/About';
 
 const DRAWER_WIDTH = 280;
@@ -78,9 +79,10 @@ export default function App() {
               <Route path="/root-finding" element={<RootFinding />} />
               <Route path="/nonlinear-system" element={<NonlinearSystem />} />
               <Route path="/linear-system" element={<LinearSystem />} />
-              <Route path="/interpolation" element={<Interpolation />} />
+              <Route path="/matrix-inverse" element={<MatrixInverse />} />
+              <Route path="/matrix-decomposition" element={<MatrixDecomposition />} />
+              <Route path="/eigenvalues" element={<Eigenvalues />} />
               <Route path="/integration" element={<Integration />} />
-              <Route path="/comparison" element={<Comparison />} />
               <Route path="/about" element={<About />} />
             </Routes>
           </Box>

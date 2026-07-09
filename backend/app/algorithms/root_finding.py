@@ -15,11 +15,19 @@ def _effective_epsilon(epsilon: float) -> float:
 
 
 def _is_converged(fx: float, error: float, epsilon: float) -> bool:
-    """Check convergence with machine epsilon tolerance."""
-    if abs(fx) < epsilon or error < epsilon:
+    """Check convergence: BOTH |f(x)| AND step size error must be within tolerance.
+
+    Requires BOTH conditions to avoid false convergence:
+    - |f(x)| < epsilon (function value near zero)
+    - error < epsilon (step size small)
+    
+    Falls back to machine epsilon if BOTH are at machine precision.
+    """
+    eff_eps = max(epsilon, MACHINE_EPSILON * 10)
+    if abs(fx) < eff_eps and error < eff_eps:
         return True
-    # Machine precision fallback: still converged if value is near zero
-    if abs(fx) < MACHINE_EPSILON * 1000 or error < MACHINE_EPSILON * 1000:
+    # Machine precision fallback: still converged if both near machine epsilon
+    if abs(fx) < MACHINE_EPSILON * 10000 and error < MACHINE_EPSILON * 10000:
         return True
     return False
 
@@ -136,7 +144,8 @@ def newton_raphson(
     
     if f_prime is None:
         def f_prime(x):
-            h = max(1e-8, 1e-7 * abs(x))
+            # Use larger h to avoid numerical noise, especially for high-degree polynomials
+            h = max(1e-6, 1e-4 * abs(x))
             return (f(x + h) - f(x - h)) / (2 * h)
     
     start_time = time.time()
@@ -186,6 +195,21 @@ def newton_raphson(
         
         f_x1 = f(x1)
         if _is_converged(f_x1, error, eps_eff):
+            # Post-convergence sanity check: ensure |f(root)| is actually small
+            if abs(f_x1) > eps_eff * 1000 and abs(f_x1) > 0.01:
+                # Convergence detected but f(x) is still large — false convergence
+                msg = (f"False convergence detected: |f({x1:.6f})| = {abs(f_x1):.2e} >> epsilon = {eps_eff:.1e}. "
+                       f"Newton-Raphson may be stuck at a local extremum or flat region.")
+                return {
+                    "success": False,
+                    "message": msg,
+                    "root": round(x1, 10), "f_root": round(f_x1, 10),
+                    "iterations_count": k + 1, "final_error": round(error, 10),
+                    "iterations": iterations,
+                    "execution_time": round(time.time() - start_time, 6),
+                    "convergence_data": _get_convergence_data(iterations),
+                    "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
+                }
             execution_time = time.time() - start_time
             return {
                 "success": True,

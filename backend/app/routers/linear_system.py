@@ -3,7 +3,6 @@ from fastapi import APIRouter
 from app.schemas.linear_system import (
     LinearSystemRequest, LinearSystemResponse,
     MatrixPropertiesRequest, MatrixPropertiesResponse,
-    MatrixInverseRequest, MatrixInverseResponse,
 )
 from app.algorithms import linear_system
 
@@ -105,25 +104,3 @@ async def analyze_matrix_properties(request: MatrixPropertiesRequest):
     """Analyze matrix A properties and return recommendations."""
     props = linear_system._detect_matrix_properties(request.A)
     return MatrixPropertiesResponse(**props)
-
-
-@router.post("/inverse", response_model=MatrixInverseResponse)
-async def compute_matrix_inverse(request: MatrixInverseRequest):
-    """Compute the inverse of matrix A using the selected method."""
-    method = request.method.lower()
-
-    if method == "gauss_jordan":
-        result = linear_system.matrix_inverse_gauss_jordan(request.A)
-    elif method == "adjoint":
-        result = linear_system.matrix_inverse_adjoint(request.A)
-    elif method == "lu":
-        result = linear_system.matrix_inverse_lu(request.A)
-    elif method == "cholesky":
-        result = linear_system.matrix_inverse_cholesky(request.A)
-    else:
-        return MatrixInverseResponse(
-            success=False,
-            message=f"Unknown inverse method: {method}. Choose from: gauss_jordan, adjoint, lu, cholesky",
-        )
-
-    return MatrixInverseResponse(**result)
