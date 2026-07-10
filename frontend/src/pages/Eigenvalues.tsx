@@ -6,6 +6,7 @@ import {
 import MatrixLatexEditor from '../components/MatrixLatexEditor';
 import IterationTable from '../components/IterationTable';
 import ResultCard from '../components/ResultCard';
+import SolutionSteps from '../components/SolutionSteps';
 
 const BASE_URL = '/eigenvalues';
 
@@ -14,8 +15,8 @@ const methods = [
   { value: 'power', label: 'Power Iteration (λ_max)', iterative: true },
   { value: 'inverse_power', label: 'Inverse Power Iteration', iterative: true },
   { value: 'rayleigh', label: 'Rayleigh Quotient Iteration', iterative: true },
-  { value: 'qr', label: 'QR Algorithm (tất cả λ)', iterative: false },
   { value: 'jacobi', label: 'Jacobi Method (đối xứng)', iterative: false },
+  { value: 'danielewski', label: 'Danielewski (Frobenius)', iterative: false },
 ];
 
 export default function Eigenvalues() {
@@ -119,7 +120,7 @@ export default function Eigenvalues() {
                   <Typography variant="h6">λ_max = {result.dominant_eigenvalue.toFixed(10)}</Typography>
                   {result.dominant_eigenvector && (
                     <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                      v = [{result.dominant_eigenvector.map((v: number) => v.toFixed(6)).join(', ')}]^T
+                      v = [{result.dominant_eigenvector.map((v: number) => v.toFixed(7)).join(', ')}]^T
                     </Typography>
                   )}
                 </Box>
@@ -129,7 +130,7 @@ export default function Eigenvalues() {
                   <Typography variant="h6" sx={{ mt: 1 }}>Trị riêng:</Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', my: 1 }}>
                     {result.eigenvalues.map((ev: any, idx: number) => (
-                      <Chip key={idx} label={`λ${idx+1} = ${typeof ev === 'number' ? ev.toFixed(6) : String(ev)}`}
+                      <Chip key={idx} label={`λ${idx+1} = ${typeof ev === 'number' ? ev.toFixed(7) : String(ev)}`}
                         color="primary" variant="outlined" />
                     ))}
                   </Box>
@@ -141,11 +142,11 @@ export default function Eigenvalues() {
                   {result.eigenpairs.map((pair: any, idx: number) => (
                     <Paper key={idx} variant="outlined" sx={{ p: 1.5, mt: 1 }}>
                       <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                        λ{idx+1} = {typeof pair.eigenvalue === 'number' ? pair.eigenvalue.toFixed(6) : String(pair.eigenvalue)}
+                        λ{idx+1} = {typeof pair.eigenvalue === 'number' ? pair.eigenvalue.toFixed(7) : String(pair.eigenvalue)}
                       </Typography>
                       {pair.eigenvector && (
                         <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 0.5 }}>
-                          v{idx+1} = [{pair.eigenvector.map((v: number) => v.toFixed(6)).join(', ')}]^T
+                          v{idx+1} = [{pair.eigenvector.map((v: number) => v.toFixed(7)).join(', ')}]^T
                         </Typography>
                       )}
                     </Paper>
@@ -158,7 +159,7 @@ export default function Eigenvalues() {
                 </Typography>
               )}
               {result.execution_time != null && (
-                <Typography variant="body2" color="text.secondary">⏱ {result.execution_time.toFixed(6)}s</Typography>
+                <Typography variant="body2" color="text.secondary">⏱ {result.execution_time.toFixed(7)}s</Typography>
               )}
             </Box>
           )}
@@ -166,6 +167,9 @@ export default function Eigenvalues() {
       )}
       {result?.iterations && result.iterations.length > 0 && (
         <IterationTable data={result.iterations} title="Bảng quá trình lặp" />
+      )}
+      {result?.steps && result.steps.length > 0 && (
+        <SolutionSteps steps={result.steps} method={method} />
       )}
     </Container>
   );

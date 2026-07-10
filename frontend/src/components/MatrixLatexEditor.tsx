@@ -371,52 +371,57 @@ export default function MatrixLatexEditor({
           ))}
         </Box>
 
-        {/* × symbol */}
-        <Box sx={{ display: 'flex', alignItems: 'center', height: m * 44 + 50, pt: 2 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.secondary', mx: 0.5 }}>×</Typography>
-        </Box>
+        {/* A × X = B layout — only show X, ×, B, = when B is visible */}
+        {!hideB && (
+          <>
+            {/* × symbol */}
+            <Box sx={{ display: 'flex', alignItems: 'center', height: m * 44 + 50, pt: 2 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.secondary', mx: 0.5 }}>×</Typography>
+            </Box>
 
-        {/* === X (unknowns) === */}
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-            <Typography sx={{ fontWeight: 600, color: 'success.main', fontSize: '0.9rem' }}>X</Typography>
-            <Chip label={`${aCols}×${bCols}`} size="small" variant="outlined" sx={{ fontSize: '0.65rem', height: 20, color: 'success.main', borderColor: 'success.main' }} />
-          </Box>
-          <Box sx={{ display: 'flex', gap: 0.5, mb: 0.5 }}>
-            <Box sx={{ width: 26 }} />
-            {Array.from({ length: bCols }, (_, j) => (
-              <Typography key={j} sx={{ width: CELL_WIDTH, textAlign: 'center', color: 'success.main', fontSize: '0.7rem' }}>
-                col{j + 1}
-              </Typography>
-            ))}
-          </Box>
-          {Array.from({ length: aCols }, (_, i) => (
-            <Box key={i} sx={{ display: 'flex', gap: 0.5, mb: 0.5, alignItems: 'center' }}>
-              <Typography sx={{ width: 26, textAlign: 'center', color: 'text.secondary', fontSize: '0.75rem' }}>
-                {i + 1}
-              </Typography>
-              {Array.from({ length: bCols }, (_, j) => (
-                <Paper
-                  key={j}
-                  variant="outlined"
-                  sx={{
-                    width: CELL_WIDTH, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    bgcolor: 'action.hover', borderColor: 'success.light',
-                  }}
-                >
-                  <Typography sx={{ fontSize: '0.88rem', fontStyle: 'italic', color: 'success.main', fontWeight: 500 }}>
-                    x{i + 1}{j + 1}
+            {/* === X (unknowns) === */}
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                <Typography sx={{ fontWeight: 600, color: 'success.main', fontSize: '0.9rem' }}>X</Typography>
+                <Chip label={`${aCols}×${bCols}`} size="small" variant="outlined" sx={{ fontSize: '0.65rem', height: 20, color: 'success.main', borderColor: 'success.main' }} />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 0.5, mb: 0.5 }}>
+                <Box sx={{ width: 26 }} />
+                {Array.from({ length: bCols }, (_, j) => (
+                  <Typography key={j} sx={{ width: CELL_WIDTH, textAlign: 'center', color: 'success.main', fontSize: '0.7rem' }}>
+                    col{j + 1}
                   </Typography>
-                </Paper>
+                ))}
+              </Box>
+              {Array.from({ length: aCols }, (_, i) => (
+                <Box key={i} sx={{ display: 'flex', gap: 0.5, mb: 0.5, alignItems: 'center' }}>
+                  <Typography sx={{ width: 26, textAlign: 'center', color: 'text.secondary', fontSize: '0.75rem' }}>
+                    {i + 1}
+                  </Typography>
+                  {Array.from({ length: bCols }, (_, j) => (
+                    <Paper
+                      key={j}
+                      variant="outlined"
+                      sx={{
+                        width: CELL_WIDTH, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        bgcolor: 'action.hover', borderColor: 'success.light',
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '0.88rem', fontStyle: 'italic', color: 'success.main', fontWeight: 500 }}>
+                        x{i + 1}{j + 1}
+                      </Typography>
+                    </Paper>
+                  ))}
+                </Box>
               ))}
             </Box>
-          ))}
-        </Box>
 
-        {/* = symbol */}
-        <Box sx={{ display: 'flex', alignItems: 'center', height: m * 44 + 50, pt: 2 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.secondary', mx: 0.5 }}>=</Typography>
-        </Box>
+            {/* = symbol */}
+            <Box sx={{ display: 'flex', alignItems: 'center', height: m * 44 + 50, pt: 2 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.secondary', mx: 0.5 }}>=</Typography>
+            </Box>
+          </>
+        )}
 
         {/* === Matrix B === */}
         {!hideB && (

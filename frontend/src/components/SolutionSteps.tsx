@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Box, Typography, Paper, Chip, Collapse, IconButton, Button, Stack,
-  Tooltip,
+  Tooltip, Alert,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -30,20 +30,43 @@ interface StepItem {
 interface Props {
   steps: StepItem[];
   method: string;
-  nCols?: number; // number of solution columns (for multi-column B)
+  nCols?: number;
 }
 
 const phaseColors: Record<string, { bg: string; label: string; color: string }> = {
+  condition_analysis: { bg: '#fff8e1', label: 'Điều kiện', color: '#f57f17' },
   row_swap: { bg: '#fff3e0', label: 'Đổi hàng', color: '#e65100' },
   elimination: { bg: '#e3f2fd', label: 'Khử', color: '#0d47a1' },
+  lu_elimination: { bg: '#e3f2fd', label: 'Phân rã LU', color: '#0d47a1' },
   normalize: { bg: '#e8f5e9', label: 'Chuẩn hóa', color: '#1b5e20' },
   upper_triangular: { bg: '#fce4ec', label: 'Tam giác trên', color: '#880e4f' },
   back_substitution: { bg: '#ede7f6', label: 'Thế ngược', color: '#311b92' },
   rref: { bg: '#e0f7fa', label: 'RREF', color: '#004d40' },
+  cholesky_check: { bg: '#fff8e1', label: 'Kiểm tra', color: '#f57f17' },
+  cholesky_compute: { bg: '#e3f2fd', label: 'Phân rã Cholesky', color: '#0d47a1' },
+  cholesky_L: { bg: '#e8f5e9', label: 'Ma trận L', color: '#1b5e20' },
+  cholesky_verify: { bg: '#ede7f6', label: 'Kiểm tra L·L^T=A', color: '#311b92' },
+  cholesky_forward: { bg: '#fce4ec', label: 'Thế xuôi LY=B', color: '#880e4f' },
+  cholesky_back: { bg: '#fff3e0', label: 'Thế ngược L^T X=Y', color: '#e65100' },
+  iterative_decompose: { bg: '#e8eaf6', label: 'Phân rã A = D+L+U', color: '#1a237e' },
+  iteration_matrix: { bg: '#e3f2fd', label: 'Ma trận lặp B, d', color: '#0d47a1' },
+  iterative_formula: { bg: '#f3e5f5', label: 'Công thức lặp', color: '#4a148c' },
+  iterative_steps: { bg: '#e8f5e9', label: 'Các bước lặp', color: '#1b5e20' },
   solution: { bg: '#f1f8e9', label: 'Nghiệm', color: '#33691e' },
 };
 
-function renderMatrix(mat: number[][], precision: number = 6) {
+/** Safely format a number for display, guarding against NaN/Infinity. */
+function safeToFixed(v: number, precision: number): string {
+  if (!Number.isFinite(v)) {
+    return ' ---- ';
+  }
+  if (Math.abs(v) < 1e-15) {
+    return ' 0.'.padEnd(precision + 5) + ' ';
+  }
+  return v.toFixed(precision).padStart(precision + 3);
+}
+
+function renderMatrix(mat: number[][], precision: number = 7) {
   if (!mat || mat.length === 0) return null;
   return (
     <Box sx={{ fontFamily: '"Fira Code", "Consolas", monospace', fontSize: '0.82rem', overflowX: 'auto', mt: 0.5 }}>
@@ -53,8 +76,8 @@ function renderMatrix(mat: number[][], precision: number = 6) {
           {row.map((v, ci) => (
             <span key={ci}>
               {typeof v === 'number'
-                ? (Math.abs(v) < 1e-15 ? ' 0.'.padEnd(precision + 5) + ' ' : v.toFixed(precision).padStart(precision + 3))
-                : String(v).padStart(precision + 3)}{' '}
+                ? safeToFixed(v, precision) + ' '
+                : String(v).padStart(precision + 3) + ' '}
               {ci < row.length - 1 ? '' : '|'}
             </span>
           ))}
@@ -70,10 +93,10 @@ function methodTitle(method: string): string {
     gauss_jordan: 'Phương pháp Gauss-Jordan',
     lu: 'Phương pháp phân rã LU (Doolittle)',
     cholesky: 'Phương pháp Cholesky',
-    thomas: 'Thuật toán Thomas (TDMA)',
     jacobi: 'Phương pháp lặp Jacobi',
     gauss_seidel: 'Phương pháp lặp Gauss-Seidel',
-    sor: 'Phương pháp SOR (Successive Over-Relaxation)',
+    simple_iteration: 'Phương pháp lặp đơn (Simple Iteration)',
+    seidel: 'Phương pháp lặp Seidel',
   };
   return map[method] || method;
 }
@@ -86,9 +109,8 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
     setExpandedPhases(prev => ({ ...prev, [phase]: !prev[phase] }));
   };
 
-  const isPhaseExpanded = (phase: string) => expandedPhases[phase] !== false; // default expanded
+  const isPhaseExpanded = (phase: string) => expandedPhases[phase] !== false;
 
-  // Group steps by phase
   const phases: { phase: string; steps: StepItem[] }[] = [];
   let currentPhase = '';
   let currentSteps: StepItem[] = [];
@@ -114,7 +136,6 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Generate LaTeX for copy
   const generateLatex = (): string => {
     const lines: string[] = [];
     lines.push(`\\textbf{${methodTitle(method)}}`);
@@ -125,7 +146,7 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
         lines.push('$$');
         lines.push('\\begin{bmatrix}');
         lines.push(
-          step.matrix.map(row => row.map(v => v.toFixed(4)).join(' & ')).join(' \\\\ ')
+          step.matrix.map(row => row.map(v => Number.isFinite(v) ? v.toFixed(4) : '0').join(' & ')).join(' \\\\ ')
         );
         lines.push('\\end{bmatrix}');
         lines.push('$$');
@@ -145,7 +166,7 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
       if (step.solution) {
         lines.push('$$');
         lines.push('X = \\begin{bmatrix}');
-        lines.push(step.solution.map(row => row.map(v => v.toFixed(6)).join(' & ')).join(' \\\\ '));
+        lines.push(step.solution.map(row => row.map(v => Number.isFinite(v) ? v.toFixed(7) : '0').join(' & ')).join(' \\\\ '));
         lines.push('\\end{bmatrix}');
         lines.push('$$');
       }
@@ -156,9 +177,7 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
 
   const copyLatex = () => {
     const latex = generateLatex();
-    navigator.clipboard.writeText(latex).then(() => {
-      // brief visual feedback handled by button
-    });
+    navigator.clipboard.writeText(latex).then(() => {});
   };
 
   const exportPdf = () => {
@@ -174,7 +193,6 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
 
   return (
     <Box sx={{ mt: 3 }}>
-      {/* Header with collapsible toggle */}
       <Paper sx={{ p: 2, mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <IconButton size="small" onClick={() => setExpanded(!expanded)}>
@@ -203,7 +221,6 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
       </Paper>
 
       <Collapse in={expanded}>
-        {/* Phase navigation pills */}
         {phases.length > 1 && (
           <Box sx={{ mb: 2, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
             {phases.map(({ phase }) => {
@@ -221,7 +238,6 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
           </Box>
         )}
 
-        {/* Phase groups */}
         {phases.map(({ phase, steps: phaseSteps }) => (
           <Box key={phase} id={`phase-${phase}`} sx={{ mb: 2 }}>
             {phases.length > 1 && (
@@ -257,6 +273,16 @@ export default function SolutionSteps({ steps, method, nCols }: Props) {
 
 function StepCard({ step }: { step: StepItem; method?: string; nCols?: number }) {
   const phaseInfo = step.phase ? phaseColors[step.phase] : null;
+  const props = (step as any).matrix_properties;
+  const s = step as any;
+
+  /** Safely format determinant: NaN/Inf => show warning text */
+  const formatDeterminant = (det: number): string => {
+    if (!Number.isFinite(det)) {
+      return 'N/A (NaN)';
+    }
+    return det.toExponential(4);
+  };
 
   return (
     <Paper
@@ -267,15 +293,47 @@ function StepCard({ step }: { step: StepItem; method?: string; nCols?: number })
         bgcolor: phaseInfo ? phaseInfo.bg : 'background.paper',
       }}
     >
-      {/* Step header */}
       <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, fontSize: '0.85rem' }}>
         Bước {step.step}: {step.description}
       </Typography>
 
-      {/* LaTeX row operations (for Gauss) */}
-      {(step as any).row_operations_latex && (step as any).row_operations_latex.length > 0 && (
+      {/* Condition analysis panel */}
+      {step.phase === 'condition_analysis' && props && (
+        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Chip size="small" label={`${props.m}x${props.n}${props.is_square ? ' vuong' : ''}`} color={props.is_square ? 'success' : 'warning'} variant="outlined" />
+          <Chip size="small" label={`rank(A) = ${props.rank_A}`} color="primary" variant="outlined" />
+          <Chip size="small" label={`rank([A|B]) = ${props.rank_augmented}`} color="primary" variant="outlined" />
+          {props.determinant !== undefined && (
+            <Chip size="small" label={`det(A) = ${formatDeterminant(props.determinant)}`}
+              color={!Number.isFinite(props.determinant) ? 'warning' : props.is_singular ? 'error' : 'success'} variant="outlined" />
+          )}
+          <Chip size="small" label={props.solution_type === 'unique' ? 'Nghiệm duy nhất' : props.solution_type === 'infinite' ? 'Vô số nghiệm' : props.solution_type === 'inconsistent' ? 'Vô nghiệm' : props.solution_type}
+            color={props.solution_type === 'unique' ? 'success' : props.solution_type === 'infinite' ? 'info' : 'error'} variant="outlined" />
+          {props.p > 1 && <Chip size="small" label={`B có ${props.p} cột`} color="secondary" variant="outlined" />}
+        </Box>
+      )}
+
+      {/* Convergence details (for iterative methods) */}
+      {step.phase === 'condition_analysis' && (s as any).convergence_details && (
+        <Box sx={{ mt: 1 }}>
+          {(s as any).convergence_details.map((line: string, i: number) => (
+            <Typography key={i} variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.78rem', lineHeight: 1.6 }}>
+              {line}
+            </Typography>
+          ))}
+        </Box>
+      )}
+
+      {step.phase === 'condition_analysis' && (s as any).singular_warning && (
+        <Alert severity="warning" sx={{ mt: 1, fontSize: '0.8rem' }}>
+          ⚠️ {(s as any).singular_warning}
+        </Alert>
+      )}
+
+      {/* Row operations LaTeX */}
+      {(s as any).row_operations_latex && (s as any).row_operations_latex.length > 0 && (
         <Box sx={{ mb: 0.5 }}>
-          {(step as any).row_operations_latex.map((latex: string, i: number) => (
+          {(s as any).row_operations_latex.map((latex: string, i: number) => (
             <Box key={i} sx={{ mb: 0.2 }}>
               <FormulaRenderer latex={`$${latex}$`} display={false} />
             </Box>
@@ -283,8 +341,7 @@ function StepCard({ step }: { step: StepItem; method?: string; nCols?: number })
         </Box>
       )}
 
-      {/* Row operations detail (non-LaTeX fallback) */}
-      {!((step as any).row_operations_latex) && step.row_operations && step.row_operations.length > 0 && (
+      {!((s as any).row_operations_latex) && step.row_operations && step.row_operations.length > 0 && (
         <Box sx={{ mb: 0.5 }}>
           {step.row_operations.map((op, i) => (
             <Chip
@@ -297,28 +354,107 @@ function StepCard({ step }: { step: StepItem; method?: string; nCols?: number })
         </Box>
       )}
 
-      {/* LaTeX matrix display (for Gauss) */}
-      {(step as any).matrix_latex ? (
+      {/* Matrix display */}
+      {(s as any).matrix_latex ? (
         <Box sx={{ mt: 1, overflowX: 'auto' }}>
-          <FormulaRenderer latex={`$${(step as any).matrix_latex}$`} display={true} />
+          <FormulaRenderer latex={`$${(s as any).matrix_latex}$`} display={true} />
         </Box>
       ) : (
-        /* Plain matrix fallback */
         step.matrix && renderMatrix(step.matrix)
       )}
 
-      {/* Back substitution / Solution LaTeX (for Gauss back-substitution & Gauss-Jordan solution) */}
-      {(step as any).back_substitution_latex && (
+      {/* Decomposition D, L, U matrices */}
+      {step.phase === 'iterative_decompose' && (
+        <Stack spacing={1} sx={{ mt: 1 }}>
+          {(s as any).D_matrix && (
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>D (chéo chính):</Typography>
+              {renderMatrix((s as any).D_matrix, 7)}
+            </Box>
+          )}
+          {(s as any).L_matrix && (
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>L (tam giác dưới):</Typography>
+              {renderMatrix((s as any).L_matrix, 7)}
+            </Box>
+          )}
+          {(s as any).U_matrix && (
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>U (tam giác trên):</Typography>
+              {renderMatrix((s as any).U_matrix, 7)}
+            </Box>
+          )}
+        </Stack>
+      )}
+
+      {/* Iteration matrix B and vector d */}
+      {step.phase === 'iteration_matrix' && (
+        <Stack spacing={1} sx={{ mt: 1 }}>
+          {(s as any).B_matrix && (
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>B = -D⁻¹(L+U):</Typography>
+              {renderMatrix((s as any).B_matrix, 7)}
+            </Box>
+          )}
+          {(s as any).d_vector && (
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                d = D⁻¹b = [{((s as any).d_vector as number[]).map((v: number) => v.toFixed(7)).join(', ')}]<sup>T</sup>
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+      )}
+
+      {/* Iteration formula */}
+      {step.phase === 'iterative_formula' && (s as any).formula_lines && (
+        <Box sx={{ mt: 1, bgcolor: 'rgba(0,0,0,0.03)', p: 1.5, borderRadius: 1 }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>📐 Công thức lặp:</Typography>
+          {(s as any).formula_lines.map((line: string, i: number) => (
+            <Typography key={i} variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.82rem', lineHeight: 1.8 }}>
+              {line}
+            </Typography>
+          ))}
+        </Box>
+      )}
+
+      {/* Iterative step details */}
+      {step.phase === 'iterative_steps' && (s as any).iteration_details && (
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+            🔢 Tính toán chi tiết:
+          </Typography>
+          {(s as any).iteration_details.map((line: string, i: number) => (
+            <Typography key={i} variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', lineHeight: 1.6 }}>
+              {line}
+            </Typography>
+          ))}
+          <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+            {(s as any).x_current && (
+              <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'text.secondary' }}>
+                x<sup>(k)</sup> = [{(s as any).x_current.join(', ')}]
+              </Typography>
+            )}
+            {(s as any).x_new && (
+              <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 600 }}>
+                → x<sup>(k+1)</sup> = [{(s as any).x_new.join(', ')}]
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {/* Back substitution / Solution LaTeX */}
+      {(s as any).back_substitution_latex && (
         <Box sx={{ mt: 1, bgcolor: 'rgba(0,0,0,0.03)', p: 1.5, borderRadius: 1 }}>
           <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
             {step.phase === 'solution' ? '✅ Nghiệm:' : '🔄 Thế ngược:'}
           </Typography>
-          <FormulaRenderer latex={`$${(step as any).back_substitution_latex}$`} display={true} />
+          <FormulaRenderer latex={`$${(s as any).back_substitution_latex}$`} display={true} />
         </Box>
       )}
 
-      {/* Back substitution text fallback */}
-      {!((step as any).back_substitution_latex) && step.back_substitution && step.back_substitution.length > 0 && (
+      {!((s as any).back_substitution_latex) && step.back_substitution && step.back_substitution.length > 0 && (
         <Box sx={{ mt: 1, bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1 }}>
           <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
             🔄 Thế ngược:
@@ -331,7 +467,6 @@ function StepCard({ step }: { step: StepItem; method?: string; nCols?: number })
         </Box>
       )}
 
-      {/* Solution lines (Gauss-Jordan RREF) */}
       {step.solution_lines && step.solution_lines.length > 0 && (
         <Box sx={{ mt: 1, bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1 }}>
           <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
@@ -345,16 +480,14 @@ function StepCard({ step }: { step: StepItem; method?: string; nCols?: number })
         </Box>
       )}
 
-      {/* Solution vector (single) */}
       {step.solution_vector && !step.solution_lines && (
         <Box sx={{ mt: 0.5 }}>
           <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 600 }}>
-            X = [{step.solution_vector.join(', ')}]<sup>T</sup>
+            X = [{step.solution_vector.map(v => Number.isFinite(v) ? v : 'NaN').join(', ')}]<sup>T</sup>
           </Typography>
         </Box>
       )}
 
-      {/* Solution matrix */}
       {step.solution && (
         <Box sx={{ mt: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>Kết quả:</Typography>
@@ -362,7 +495,6 @@ function StepCard({ step }: { step: StepItem; method?: string; nCols?: number })
         </Box>
       )}
 
-      {/* Inverse matrix */}
       {step.inverse && (
         <Box sx={{ mt: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>A⁻¹:</Typography>

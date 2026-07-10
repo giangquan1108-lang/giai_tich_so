@@ -15,7 +15,7 @@ const methods = [
 ];
 
 const newtonExample = ['x^2 + y^2 - 4', 'x - y'];
-const fixedPointExample = ['4/(x-y)', '5/(y+x^2)'];
+const fixedPointExample = ['cos(y)', 'sin(x)'];
 
 export default function NonlinearSystem() {
   const [numVars, setNumVars] = useState(2);
@@ -196,9 +196,9 @@ export default function NonlinearSystem() {
             {result.success && result.solution && (
               <Box sx={{ mt: 1 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, color: 'success.main' }}>
-                  Nghiệm: ({result.solution.map(v => v.toFixed(6)).join(', ')})
+                  Nghiệm: ({result.solution.map(v => v.toFixed(7)).join(', ')})
                 </Typography>
-                <Typography>Số vòng lặp: {result.iterations_count} | Sai số: {result.final_error.toExponential(4)}</Typography>
+                <Typography>Số vòng lặp: {result.iterations_count} | Sai số: {result.final_error != null ? result.final_error.toExponential(4) : 'N/A'}</Typography>
               </Box>
             )}
             {!result.success && result.solution && (
@@ -207,12 +207,18 @@ export default function NonlinearSystem() {
                   Giá trị cuối cùng (chưa hội tụ):
                 </Typography>
                 <Typography sx={{ fontFamily: 'monospace' }}>
-                  ({result.solution.map(v => v.toFixed(6)).join(', ')})
+                  ({result.solution.map(v => v.toFixed(7)).join(', ')})
                 </Typography>
                 <Typography sx={{ mt: 1 }}>
-                  Số vòng lặp đã thực hiện: {result.iterations_count} | Sai số cuối: {result.final_error.toExponential(4)}
+                  Số vòng lặp đã thực hiện: {result.iterations_count} | Sai số cuối: {result.final_error != null ? result.final_error.toExponential(4) : 'N/A'}
                 </Typography>
               </Box>
+            )}
+            {/* Stopping criterion explanation */}
+            {result.stopping_criterion && (
+              <Alert severity={result.success ? 'success' : 'info'} sx={{ mt: 1 }}>
+                <strong>Điều kiện dừng:</strong> {result.stopping_criterion}
+              </Alert>
             )}
           </ResultCard>
 
@@ -243,6 +249,53 @@ export default function NonlinearSystem() {
             <Alert severity="warning" sx={{ mt: 2 }}>
               {result.contraction_warning}
             </Alert>
+          )}
+
+          {/* Jacobian properties across iterations */}
+          {result.jacobian_properties && result.jacobian_properties.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6">Tính chất ma trận Jacobi:</Typography>
+              <Paper variant="outlined" sx={{ p: 1.5, mt: 1, maxHeight: 300, overflow: 'auto' }}>
+                <Box component="table" sx={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '4px 8px', borderBottom: '2px solid #ccc', textAlign: 'left' }}>k</th>
+                      <th style={{ padding: '4px 8px', borderBottom: '2px solid #ccc', textAlign: 'left' }}>det(J)</th>
+                      <th style={{ padding: '4px 8px', borderBottom: '2px solid #ccc', textAlign: 'left' }}>cond(J)</th>
+                      <th style={{ padding: '4px 8px', borderBottom: '2px solid #ccc', textAlign: 'left' }}>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.jacobian_properties.map((jp: any, idx: number) => {
+                      const det = jp.det;
+                      const detNum = typeof det === 'number' ? det : parseFloat(det);
+                      const isNearlySingular = typeof detNum === 'number' && Math.abs(detNum) < 1e-8;
+                      const isIllConditioned = typeof jp.cond === 'number' && jp.cond > 1e8;
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '4px 8px' }}>{jp.k}</td>
+                          <td style={{
+                            padding: '4px 8px', fontFamily: 'monospace',
+                            color: isNearlySingular ? '#d32f2f' : '#2e7d32',
+                          }}>
+                            {typeof det === 'number' ? det.toExponential(4) : det}
+                          </td>
+                          <td style={{
+                            padding: '4px 8px', fontFamily: 'monospace',
+                            color: isIllConditioned ? '#d32f2f' : 'inherit',
+                          }}>
+                            {typeof jp.cond === 'number' ? jp.cond.toExponential(4) : jp.cond}
+                          </td>
+                          <td style={{ padding: '4px 8px', fontSize: '0.8rem' }}>
+                            {isNearlySingular ? '⚠ Suy biến' : isIllConditioned ? '⚠ Điều kiện xấu' : '✅ Ổn định'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </Box>
+              </Paper>
+            </Box>
           )}
 
           <IterationTable data={result.iterations} title="Bảng quá trình lặp" />

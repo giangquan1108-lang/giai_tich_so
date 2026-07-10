@@ -261,14 +261,17 @@ async def solve_root_finding(request: RootFindingRequest):
 | `gauss_seidel(A, B, x0?, ε, max_iter)` | Cập nhật tuần tự: dùng giá trị mới nhất. |
 | `sor(A, B, x0?, ε, max_iter, ω)` | Successive Over-Relaxation: `x_new = (1-ω)·x_old + ω·x_GS`. |
 
-**Ma trận nghịch đảo (Matrix Inverse)** — 4 phương pháp:
+**Ma trận nghịch đảo (Matrix Inverse)** — 7 phương pháp:
 
 | Hàm | Đặc điểm |
 |-----|----------|
 | `matrix_inverse_gauss_jordan(A)` | [A\|I] → [I\|A⁻¹]. Ghi steps chi tiết. |
 | `matrix_inverse_adjoint(A)` | A⁻¹ = Adj(A)/det(A). Tính cofactor → adjoint. |
-| `matrix_inverse_lu(A)` | Giải A·X = I qua LU. |
 | `matrix_inverse_cholesky(A)` | Cholesky: A = L·L^T, tính A⁻¹ = (L⁻¹)^T·L⁻¹. Yêu cầu ma trận SPD. |
+| `matrix_inverse_bordering(A)` | Viền quanh (Frobenius-Schur). Xây dựng dần A⁻¹ từ ma trận con 1×1. |
+| `matrix_inverse_jacobi(A, ε, max_iter)` | Lặp Jacobi: X⁽ᵏ⁺¹⁾ = -D⁻¹(L+U)·X⁽ᵏ⁾ + D⁻¹. Yêu cầu chéo trội. |
+| `matrix_inverse_gauss_seidel(A, ε, max_iter)` | Lặp Gauss-Seidel: cập nhật tuần tự từng cột của X⁻¹. |
+| `matrix_inverse_newton(A, ε, max_iter)` | Newton-Schulz: X⁽ᵏ⁺¹⁾ = X⁽ᵏ⁾·(2I - A·X⁽ᵏ⁾). Hội tụ bậc 2. |
 
 **Phân tích hệ thống `_analyze_system()`:**
 - Tính rank(A) và rank([A\|B]) qua SVD.

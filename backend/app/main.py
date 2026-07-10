@@ -8,7 +8,6 @@ from app.routers import (
     root_finding,
     nonlinear_system,
     linear_system,
-    integration,
     matrix_inverse,
     matrix_decomposition,
     eigenvalues,
@@ -48,7 +47,6 @@ app.add_middleware(
 app.include_router(root_finding.router, prefix="/root-finding", tags=["Root Finding"])
 app.include_router(nonlinear_system.router, prefix="/nonlinear-system", tags=["Nonlinear System"])
 app.include_router(linear_system.router, prefix="/linear-system", tags=["Linear System"])
-app.include_router(integration.router, prefix="/integration", tags=["Numerical Integration"])
 app.include_router(matrix_inverse.router, prefix="/matrix-inverse", tags=["Matrix Inverse"])
 app.include_router(matrix_decomposition.router, prefix="/matrix-decomposition", tags=["Matrix Decomposition"])
 app.include_router(eigenvalues.router, prefix="/eigenvalues", tags=["Eigenvalues"])

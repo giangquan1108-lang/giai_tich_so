@@ -6,8 +6,8 @@ from app.algorithms.eigenvalues import (
     power_iteration,
     inverse_power_iteration,
     rayleigh_quotient_iteration,
-    qr_algorithm,
     jacobi_method,
+    danielewski_method,
 )
 
 router = APIRouter()
@@ -24,10 +24,10 @@ async def compute_eigenvalues(request: EigenvaluesRequest):
         result = inverse_power_iteration(request.A, request.shift or 0.0, request.epsilon, request.max_iterations, request.initial_guess)
     elif method == "rayleigh":
         result = rayleigh_quotient_iteration(request.A, request.epsilon, request.max_iterations, request.initial_guess)
-    elif method == "qr":
-        result = qr_algorithm(request.A, request.max_iterations)
     elif method == "jacobi":
         result = jacobi_method(request.A, request.epsilon, request.max_iterations)
+    elif method == "danielewski":
+        result = danielewski_method(request.A)
     else:
         return EigenvaluesResponse(success=False, message=f"Unknown method: {method}")
     return EigenvaluesResponse(**result)

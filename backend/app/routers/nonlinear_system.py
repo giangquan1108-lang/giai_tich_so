@@ -53,4 +53,6 @@ async def solve_nonlinear_system(request: NonlinearSystemRequest):
         iterations=result.get("iterations", []),
         formula=r"X_{k+1} = X_k - J^{-1}(X_k) \cdot F(X_k)" if method == "newton" else r"X_{k+1} = G(X_k)",
         contraction_warning=result.get("contraction_warning"),
+        stopping_criterion=result.get("stopping_criterion"),
+        jacobian_properties=result.get("jacobian_properties"),
     )

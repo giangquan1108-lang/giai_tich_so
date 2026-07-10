@@ -11,7 +11,6 @@ import LinearSystem from './pages/LinearSystem';
 import MatrixInverse from './pages/MatrixInverse';
 import MatrixDecomposition from './pages/MatrixDecomposition';
 import Eigenvalues from './pages/Eigenvalues';
-import Integration from './pages/Integration';
 import About from './pages/About';
 
 const DRAWER_WIDTH = 280;
@@ -82,7 +81,6 @@ export default function App() {
               <Route path="/matrix-inverse" element={<MatrixInverse />} />
               <Route path="/matrix-decomposition" element={<MatrixDecomposition />} />
               <Route path="/eigenvalues" element={<Eigenvalues />} />
-              <Route path="/integration" element={<Integration />} />
               <Route path="/about" element={<About />} />
             </Routes>
           </Box>

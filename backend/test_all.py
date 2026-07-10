@@ -74,30 +74,221 @@ r = fixed_point_iteration(lambda x: 2*x, 1, epsilon=1e-10, max_iterations=10)
 check("FixedPoint detects divergence", not r["success"])
 
 # =============================================================================
-# NONLINEAR SYSTEM
+# NONLINEAR SYSTEM — Newton Multivariable
 # =============================================================================
 print("\n" + "=" * 60)
-print("NONLINEAR SYSTEM")
+print("NONLINEAR SYSTEM — Newton Multivariable")
 print("=" * 60)
 
-from app.algorithms.nonlinear_system import newton_multivariable
+from app.algorithms.nonlinear_system import newton_multivariable, fixed_point_multivariable
 
-# System: x^2+y^2=1, x^2-y=0.5  → two solutions: (0.866, 0.5) and (0.931, 0.366)
-# Start closer to (0.866, 0.5) to ensure convergence to that root
+# N1: Basic polynomial system — two solutions: (0.866, 0.5) and (0.931, 0.366)
 r = newton_multivariable(
     ["x^2 + y^2 - 1", "x^2 - y - 0.5"],
-    ["x", "y"],
-    [0.9, 0.45],
+    ["x", "y"], [0.9, 0.45],
     epsilon=1e-10, max_iterations=100,
 )
-check("Newton system converges", r["success"])
+check("Newton basic converges", r["success"])
 if r["success"] and r.get("solution"):
     x, y = r["solution"]
-    # Accept either solution — both satisfy the system
     sol1 = abs(x - 0.8660254038) < 1e-4 and abs(y - 0.5) < 1e-4
     sol2 = abs(x - 0.9306048591) < 1e-4 and abs(y - 0.3660254038) < 1e-4
-    check("Newton system correct solution", sol1 or sol2,
-          f"got x={x}, y={y}")
+    check("Newton basic correct solution", sol1 or sol2, f"got x={x}, y={y}")
+
+# N2: Linear system 2x+y=5, x-3y=-8 => (1, 3)
+r = newton_multivariable(
+    ["2*x + y - 5", "x - 3*y + 8"],
+    ["x", "y"], [0, 0],
+    epsilon=1e-10, max_iterations=100,
+)
+check("Newton linear system converges", r["success"])
+if r["success"] and r.get("solution"):
+    x, y = r["solution"]
+    check("Newton linear (1,3)", abs(x-1) < 1e-6 and abs(y-3) < 1e-6, f"got ({x},{y})")
+
+# N3: Trig system sin(x)+cos(y)=1, x+y=pi/2
+r = newton_multivariable(
+    ["sin(x) + cos(y) - 1", "x + y - pi/2"],
+    ["x", "y"], [0.5, 0.5],
+    epsilon=1e-10, max_iterations=100,
+)
+check("Newton trig system converges", r["success"])
+if r["success"] and r.get("solution"):
+    x, y = r["solution"]
+    check("Newton trig x+y~pi/2", abs(x+y-math.pi/2) < 1e-4, f"got x={x}, y={y}")
+
+# N4: exp+log system
+r = newton_multivariable(
+    ["exp(x) + y - 5", "x^2 + log(y) - 2"],
+    ["x", "y"], [0.5, 2],
+    epsilon=1e-10, max_iterations=100,
+)
+check("Newton exp+log handled", isinstance(r, dict))
+
+# N5: 3-var nonlinear — may converge to any valid solution
+r = newton_multivariable(
+    ["x + y + z - 6", "x^2 + y^2 - z", "x - y + z - 2"],
+    ["x", "y", "z"], [1, 1, 1],
+    epsilon=1e-10, max_iterations=100,
+)
+check("Newton 3-var converges", r["success"])
+if r["success"] and r.get("solution"):
+    x, y, z = r["solution"]
+    # Verify that solution satisfies the constraints reasonably well
+    f1 = abs(x + y + z - 6)
+    f2 = abs(x**2 + y**2 - z)
+    f3 = abs(x - y + z - 2)
+    check("Newton 3-var satisfies constraints", f1 < 1e-2 and f2 < 1e-2 and f3 < 1e-2,
+          f"got ({x:.4f},{y:.4f},{z:.4f}), residuals: f1={f1:.2e} f2={f2:.2e} f3={f3:.2e}")
+
+# N6: Tiny epsilon 1e-14
+r = newton_multivariable(
+    ["x^2 + y^2 - 1", "x^2 - y - 0.5"],
+    ["x", "y"], [0.9, 0.45],
+    epsilon=1e-14, max_iterations=200,
+)
+check("Newton tiny epsilon converges", r["success"])
+if r["success"]: check("Newton tiny eps high precision", r.get("final_error", 99) < 1e-10)
+
+# N7: Large epsilon 1e-3
+r = newton_multivariable(
+    ["x^2 + y^2 - 1", "x^2 - y - 0.5"],
+    ["x", "y"], [0.9, 0.45],
+    epsilon=1e-3, max_iterations=100,
+)
+check("Newton large epsilon converges", r["success"])
+if r["success"]: check("Newton large eps fewer iters", r["iterations_count"] < 30)
+
+# N8: Inconsistent system — singular Jacobian
+r = newton_multivariable(
+    ["x + y - 1", "2*x + 2*y - 3"],
+    ["x", "y"], [0, 0],
+    epsilon=1e-10, max_iterations=100,
+)
+check("Newton inconsistent detected", not r["success"])
+
+# N9: Division by zero safety
+r = newton_multivariable(
+    ["1/(x-1) + y - 2", "x^2 + y - 3"],
+    ["x", "y"], [0, 0],
+    epsilon=1e-10, max_iterations=50,
+)
+check("Newton division handled", isinstance(r, dict))
+
+# N10: 4-variable system
+r = newton_multivariable(
+    ["x1+x2+x3+x4-10", "x1*x2-5", "x3^2-x4-3", "x1-x2+x3-x4"],
+    ["x1", "x2", "x3", "x4"], [2, 2, 2, 2],
+    epsilon=1e-10, max_iterations=100,
+)
+check("Newton 4-var handled", isinstance(r, dict))
+if r["success"] and r.get("solution"):
+    check("Newton 4-var 4 elements", len(r["solution"]) == 4)
+
+# N11: Newton vs scipy.fsolve
+from scipy.optimize import fsolve as scipy_fsolve
+def sys1(v): return [v[0]**2+v[1]**2-1, v[0]**2-v[1]-0.5]
+scipy_sol = scipy_fsolve(sys1, [0.9, 0.45])
+r = newton_multivariable(
+    ["x^2+y^2-1", "x^2-y-0.5"],
+    ["x", "y"], [0.9, 0.45],
+    epsilon=1e-10, max_iterations=100,
+)
+check("Newton matches scipy.fsolve",
+      r["success"] and abs(r["solution"][0]-scipy_sol[0]) < 1e-4,
+      f"Newton={r.get('solution')} scipy={scipy_sol}")
+
+# =============================================================================
+# NONLINEAR SYSTEM — Fixed Point Multivariable
+# =============================================================================
+print("\n" + "=" * 60)
+print("NONLINEAR SYSTEM — Fixed Point Multivariable")
+print("=" * 60)
+
+# F1: Contraction cos(y), sin(x)
+r = fixed_point_multivariable(
+    ["cos(y)", "sin(x)"],
+    ["x", "y"], [0.5, 0.5],
+    epsilon=1e-10, max_iterations=100,
+)
+check("FP cos,sin converges", r["success"])
+if r["success"]: check("FP cos,sin error small", r.get("final_error") < 1e-4)
+
+# F2: Linear FP — x=(5-y)/2, y=(x+8)/3
+r = fixed_point_multivariable(
+    ["(5 - y)/2", "(x + 8)/3"],
+    ["x", "y"], [0, 0],
+    epsilon=1e-10, max_iterations=200,
+)
+check("FP linear handled", isinstance(r, dict))
+if r["success"]:
+    x, y = r["solution"]
+    check("FP linear ~(1,3)", abs(x-1) < 1e-3 and abs(y-3) < 1e-3)
+
+# F3: Divergence — (2x, 2y)
+r = fixed_point_multivariable(
+    ["2*x", "2*y"],
+    ["x", "y"], [0.1, 0.1],
+    epsilon=1e-10, max_iterations=20,
+)
+check("FP divergence detected", not r["success"])
+
+# F4: Oscillation — (-x, -y)
+r = fixed_point_multivariable(
+    ["-x", "-y"],
+    ["x", "y"], [1, 1],
+    epsilon=1e-10, max_iterations=20,
+)
+check("FP oscillation detected", not r["success"])
+
+# F5: Tiny epsilon 1e-12
+r = fixed_point_multivariable(
+    ["cos(y)", "sin(x)"],
+    ["x", "y"], [0.5, 0.5],
+    epsilon=1e-12, max_iterations=200,
+)
+check("FP tiny epsilon converges", r["success"])
+if r["success"]: check("FP tiny eps high precision", r.get("final_error") < 1e-8)
+
+# F6: Large epsilon 1e-3
+r = fixed_point_multivariable(
+    ["cos(y)", "sin(x)"],
+    ["x", "y"], [0.5, 0.5],
+    epsilon=1e-3, max_iterations=100,
+)
+check("FP large epsilon converges", r["success"])
+if r["success"]: check("FP large eps fewer iters", r["iterations_count"] < 40)
+
+# F7: Overflow — exp(x), exp(y)
+r = fixed_point_multivariable(
+    ["exp(x)", "exp(y)"],
+    ["x", "y"], [2, 2],
+    epsilon=1e-10, max_iterations=20,
+)
+check("FP overflow detected", not r["success"])
+
+# F8: Contraction warning present
+r = fixed_point_multivariable(
+    ["cos(y)", "sin(x)"],
+    ["x", "y"], [0.5, 0.5],
+    epsilon=1e-10, max_iterations=100,
+)
+check("FP has contraction_warning key", "contraction_warning" in r)
+
+# F9: Newton faster than FP
+rn = newton_multivariable(
+    ["x^2 + y^2 - 1", "x^2 - y - 0.5"],
+    ["x", "y"], [0.9, 0.45],
+    epsilon=1e-8, max_iterations=100,
+)
+rfp = fixed_point_multivariable(
+    ["cos(y)", "sin(x)"],
+    ["x", "y"], [0.5, 0.5],
+    epsilon=1e-8, max_iterations=100,
+)
+check("Newton < FP iterations (expected)",
+      rn.get("iterations_count", 999) < rfp.get("iterations_count", 0),
+      f"Newton={rn.get('iterations_count')} FP={rfp.get('iterations_count')}")
 
 # =============================================================================
 # LINEAR SYSTEM
@@ -108,7 +299,7 @@ print("=" * 60)
 
 from app.algorithms.linear_system import (
     gaussian_elimination, gauss_jordan, lu_decomposition,
-    cholesky_decomposition, thomas_algorithm, jacobi, gauss_seidel, sor
+    cholesky_decomposition, jacobi, gauss_seidel, simple_iteration, seidel
 )
 
 # Test matrices
@@ -214,26 +405,6 @@ check("Cholesky B(3x2) correct", np.allclose(np.array(r["solution"]), x_spd2, at
 r = cholesky_decomposition([[1,2],[3,4]], [[1],[2]])
 check("Cholesky rejects non-symmetric", not r["success"])
 
-# --- Thomas ---
-A_tri = [[4, 1, 0], [1, 4, 1], [0, 1, 4]]
-b_tri = [[6], [2], [6]]
-b_tri2 = [[6, 1], [2, 2], [6, 3]]
-x_tri = np.linalg.solve(np.array(A_tri), np.array([6,2,6]))
-x_tri2 = np.linalg.solve(np.array(A_tri), np.array(b_tri2))
-
-r = thomas_algorithm(A_tri, b_tri)
-check("Thomas B(3x1) success", r["success"])
-check("Thomas B(3x1) correct", np.allclose(np.array(r["solution"]).flatten(), x_tri, atol=1e-6))
-
-r = thomas_algorithm(A_tri, b_tri2)
-check("Thomas B(3x2) success", r["success"])
-check("Thomas B(3x2) shape 3×2", np.array(r["solution"]).shape == (3, 2))
-check("Thomas B(3x2) correct", np.allclose(np.array(r["solution"]), x_tri2, atol=1e-6))
-
-# Thomas non-tridiagonal
-r = thomas_algorithm(A3, b3)
-check("Thomas rejects non-tridiagonal", not r["success"])
-
 # --- Iterative methods ---
 # Jacobi with B(3x1)
 r = jacobi(A3, b3, epsilon=1e-10, max_iterations=100)
@@ -255,14 +426,20 @@ if r["success"]:
 r = gauss_seidel(A3, b3_2)
 check("GaussSeidel B(3x2) rejected", not r["success"])
 
-# SOR
-r = sor(A3, b3, epsilon=1e-10, max_iterations=100, omega=1.0)
-check("SOR B(3x1) success", r["success"])
+# Simple Iteration
+B_si = [[0.1, 0.2], [0.2, 0.1]]
+d_si = [1, 2]
+x_si_true = np.linalg.solve(np.eye(2) - np.array(B_si, dtype=float), np.array([1, 2], dtype=float))
+r = simple_iteration(B_si, d_si, epsilon=1e-10, max_iterations=100)
+check("SimpleIteration success", r["success"])
 if r["success"]:
-    check("SOR B(3x1) correct", np.allclose(np.array(r["solution"]).flatten(), x3_true, atol=1e-4))
+    check("SimpleIteration correct", np.allclose(np.array(r["solution"]).flatten(), x_si_true, atol=1e-4))
 
-r = sor(A3, b3_2)
-check("SOR B(3x2) rejected", not r["success"])
+# Seidel
+r = seidel(B_si, d_si, epsilon=1e-10, max_iterations=100)
+check("Seidel success", r["success"])
+if r["success"]:
+    check("Seidel correct", np.allclose(np.array(r["solution"]).flatten(), x_si_true, atol=1e-4))
 
 # --- Solution type: unique, inconsistent, infinite ---
 r = gaussian_elimination(A_inc, b_inc)
@@ -283,48 +460,17 @@ check("A(5x5) B(5x3) shape 5×3", np.array(r["solution"]).shape == (5, 3),
 check("A(5x5) B(5x3) correct", np.allclose(np.array(r["solution"]), x53_true, atol=1e-6))
 
 # =============================================================================
-# INTEGRATION
-# =============================================================================
-print("\n" + "=" * 60)
-print("INTEGRATION")
-print("=" * 60)
-
-from app.algorithms.integration import trapezoidal, simpson_one_third, simpson_three_eighth, romberg
-
-# ∫0→1 x² dx = 1/3 ≈ 0.3333333
-import math as _math
-true_integral = 1/3
-def f_int(x): return x**2
-
-r = trapezoidal(f_int, 0, 1, n=1000)
-check("Trapezoidal success", r["success"])
-check("Trapezoidal ~1/3", abs(r["result"] - true_integral) < 1e-4, f"got {r['result']}")
-
-r = simpson_one_third(f_int, 0, 1, n=100)
-check("Simpson 1/3 success", r["success"])
-check("Simpson 1/3 ~1/3", abs(r["result"] - true_integral) < 1e-6, f"got {r['result']}")
-
-r = simpson_three_eighth(f_int, 0, 1, n=99)
-check("Simpson 3/8 success", r["success"])
-check("Simpson 3/8 ~1/3", abs(r["result"] - true_integral) < 1e-6, f"got {r['result']}")
-
-r = romberg(f_int, 0, 1, n=8)
-check("Romberg success", r["success"])
-check("Romberg ~1/3", abs(r["result"] - true_integral) < 1e-6, f"got {r['result']}")
-
-# Check scipy comparison available
-check("Integration has scipy reference", r.get("exact_value") is not None)
-
-# =============================================================================
 # MATRIX INVERSE
 # =============================================================================
 print("\n" + "=" * 60)
 print("MATRIX INVERSE")
 print("=" * 60)
 
-from app.algorithms.linear_system import (
+from app.algorithms.matrix_inverse import (
     matrix_inverse_gauss_jordan, matrix_inverse_adjoint,
-    matrix_inverse_lu, matrix_inverse_cholesky
+    matrix_inverse_bordering, matrix_inverse_cholesky,
+    matrix_inverse_jacobi, matrix_inverse_gauss_seidel,
+    matrix_inverse_newton,
 )
 
 A_inv = [[4, 1], [2, 3]]
@@ -332,7 +478,7 @@ A_inv_true = np.linalg.inv(np.array(A_inv))
 
 for name, func in [("GaussJordan", matrix_inverse_gauss_jordan),
                     ("Adjoint", matrix_inverse_adjoint),
-                    ("LU", matrix_inverse_lu)]:
+                    ("Bordering", matrix_inverse_bordering)]:
     r = func(A_inv)
     check(f"Inverse {name} success", r["success"],
           f"msg={r.get('message')}")
@@ -358,11 +504,31 @@ if r["success"]:
 r = matrix_inverse_cholesky(A_inv)  # non-symmetric
 check("Inverse Cholesky rejects non-symmetric", not r["success"])
 
+# Iterative inverse: Jacobi
+A_iter = [[10, 1, 1], [1, 10, 1], [1, 1, 10]]
+A_iter_true = np.linalg.inv(np.array(A_iter))
+r = matrix_inverse_jacobi(A_iter, epsilon=1e-6, max_iterations=500)
+check("Inverse Jacobi success", r["success"], f"msg={r.get('message')}")
+if r["success"]:
+    check("Inverse Jacobi correct", np.allclose(np.array(r["inverse"]), A_iter_true, atol=1e-4))
+
+# Iterative inverse: Gauss-Seidel
+r = matrix_inverse_gauss_seidel(A_iter, epsilon=1e-6, max_iterations=300)
+check("Inverse GS success", r["success"], f"msg={r.get('message')}")
+if r["success"]:
+    check("Inverse GS correct", np.allclose(np.array(r["inverse"]), A_iter_true, atol=1e-4))
+
+# Iterative inverse: Newton-Schulz
+r = matrix_inverse_newton(A_inv, epsilon=1e-6, max_iterations=50)
+check("Inverse Newton success", r["success"], f"msg={r.get('message')}")
+if r["success"]:
+    check("Inverse Newton correct", np.allclose(np.array(r["inverse"]), A_inv_true, atol=1e-4))
+
 # Singular matrix
 A_sing = [[1, 1], [2, 2]]
 for name, func in [("GaussJordan", matrix_inverse_gauss_jordan),
                     ("Adjoint", matrix_inverse_adjoint),
-                    ("LU", matrix_inverse_lu)]:
+                    ("Bordering", matrix_inverse_bordering)]:
     r = func(A_sing)
     check(f"Inverse {name} rejects singular", not r["success"],
           f"msg={r.get('message', 'N/A')[:80]}")

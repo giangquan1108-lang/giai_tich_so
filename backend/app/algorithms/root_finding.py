@@ -91,7 +91,7 @@ def bisection(
                 "root": round(c, 10), "f_root": round(fc, 10),
                 "iterations_count": k + 1, "final_error": round(error, 10),
                 "iterations": iterations,
-                "execution_time": round(execution_time, 6),
+                "execution_time": round(execution_time, 7),
                 "convergence_data": _get_convergence_data(iterations),
                 "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
             }
@@ -114,7 +114,7 @@ def bisection(
             "root": round(c, 10), "f_root": round(fc, 10),
             "iterations_count": max_iterations, "final_error": round(final_error, 10),
             "iterations": iterations,
-            "execution_time": round(execution_time, 6),
+            "execution_time": round(execution_time, 7),
             "convergence_data": _get_convergence_data(iterations),
             "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
         }
@@ -125,7 +125,7 @@ def bisection(
         "root": round(c, 10), "f_root": round(fc, 10),
         "iterations_count": max_iterations, "final_error": round(final_error, 10),
         "iterations": iterations,
-        "execution_time": round(execution_time, 6),
+        "execution_time": round(execution_time, 7),
         "convergence_data": _get_convergence_data(iterations),
         "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
     }
@@ -217,7 +217,7 @@ def newton_raphson(
                 "root": round(x1, 10), "f_root": round(f_x1, 10),
                 "iterations_count": k + 1, "final_error": round(error, 10),
                 "iterations": iterations,
-                "execution_time": round(execution_time, 6),
+                "execution_time": round(execution_time, 7),
                 "convergence_data": _get_convergence_data(iterations),
                 "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
             }
@@ -235,7 +235,7 @@ def newton_raphson(
             "root": round(x0, 10), "f_root": round(final_fx, 10),
             "iterations_count": max_iterations, "final_error": round(error, 10),
             "iterations": iterations,
-            "execution_time": round(execution_time, 6),
+            "execution_time": round(execution_time, 7),
             "convergence_data": _get_convergence_data(iterations),
             "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
         }
@@ -246,7 +246,7 @@ def newton_raphson(
         "root": round(x0, 10), "f_root": round(final_fx, 10),
         "iterations_count": max_iterations, "final_error": round(error, 10),
         "iterations": iterations,
-        "execution_time": round(execution_time, 6),
+        "execution_time": round(execution_time, 7),
         "convergence_data": _get_convergence_data(iterations),
         "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
     }
@@ -294,7 +294,7 @@ def secant(
                 "root": round(x2, 10), "f_root": round(f_x2, 10),
                 "iterations_count": k + 1, "final_error": round(error, 10),
                 "iterations": iterations,
-                "execution_time": round(execution_time, 6),
+                "execution_time": round(execution_time, 7),
                 "convergence_data": _get_convergence_data(iterations),
                 "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
             }
@@ -311,7 +311,7 @@ def secant(
             "root": round(x1, 10), "f_root": round(f_x1, 10),
             "iterations_count": max_iterations, "final_error": round(error, 10),
             "iterations": iterations,
-            "execution_time": round(execution_time, 6),
+            "execution_time": round(execution_time, 7),
             "convergence_data": _get_convergence_data(iterations),
             "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
         }
@@ -322,7 +322,7 @@ def secant(
         "root": round(x1, 10), "f_root": round(f_x1, 10),
         "iterations_count": max_iterations, "final_error": round(error, 10),
         "iterations": iterations,
-        "execution_time": round(execution_time, 6),
+        "execution_time": round(execution_time, 7),
         "convergence_data": _get_convergence_data(iterations),
         "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
     }
@@ -364,7 +364,7 @@ def fixed_point_iteration(
             }
         try:
             x1 = f(x0)
-        except (OverflowError, ValueError, FloatingPointError):
+        except (OverflowError, ValueError, FloatingPointError, ZeroDivisionError):
             return {
                 "success": False,
                 "message": "Phương pháp lặp đơn phân kỳ — tràn số khi tính g(x).",
@@ -403,7 +403,7 @@ def fixed_point_iteration(
                 "root": round(x1, 10), "f_root": round(error, 10),
                 "iterations_count": k + 1, "final_error": round(error, 10),
                 "iterations": iterations,
-                "execution_time": round(execution_time, 6),
+                "execution_time": round(execution_time, 7),
                 "convergence_data": _get_convergence_data(iterations),
                 "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
                 "contraction_info": contraction_info,
@@ -420,7 +420,7 @@ def fixed_point_iteration(
             "root": round(x0, 10), "f_root": 0.0,
             "iterations_count": max_iterations, "final_error": round(error, 10),
             "iterations": iterations,
-            "execution_time": round(execution_time, 6),
+            "execution_time": round(execution_time, 7),
             "convergence_data": _get_convergence_data(iterations),
             "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
             "contraction_info": contraction_info,
@@ -432,7 +432,7 @@ def fixed_point_iteration(
         "root": round(x0, 10), "f_root": 0.0,
         "iterations_count": max_iterations, "final_error": round(error, 10),
         "iterations": iterations,
-        "execution_time": round(execution_time, 6),
+        "execution_time": round(execution_time, 7),
         "convergence_data": _get_convergence_data(iterations),
         "effective_epsilon": eps_eff, "machine_epsilon": MACHINE_EPSILON,
         "contraction_info": contraction_info,

@@ -55,6 +55,8 @@ export interface NonlinearSystemResponse {
   iterations: Record<string, unknown>[];
   formula: string;
   contraction_warning?: string;
+  stopping_criterion?: string;
+  jacobian_properties?: Record<string, unknown>[];
 }
 
 // Unified Linear System (AX=B) — direct + iterative methods
@@ -118,7 +120,10 @@ export type MatrixSolverResponse = LinearSystemResponse;
 // Matrix Inverse
 export interface MatrixInverseRequest {
   A: number[][];
-  method?: string;  // gauss_jordan, adjoint, lu, cholesky
+  method?: string;  // gauss_jordan, adjoint, cholesky, bordering, jacobi, gauss_seidel, newton
+  epsilon?: number;
+  max_iterations?: number;
+  initial_guess?: number[][];
 }
 
 export interface MatrixInverseResponse {
@@ -132,8 +137,13 @@ export interface MatrixInverseResponse {
   inverse_latex?: string;
   verification?: number[][];
   is_accurate?: boolean;
-  steps?: Record<string, unknown>[];
+  steps?: any[];
   execution_time?: number;
+  iterations_count?: number;
+  final_error?: number;
+  spectral_radius?: number;
+  converges?: boolean;
+  iterations?: Record<string, unknown>[];
 }
 
 // Interpolation
@@ -152,32 +162,6 @@ export interface InterpolationResponse {
   divided_diff_table?: number[][];
   iterations: Record<string, unknown>[];
   formula: string;
-}
-
-// Integration
-export interface IntegrationRequest {
-  function: string;
-  a: number;
-  b: number;
-  n: number;
-  method: string;
-}
-
-export interface IntegrationResponse {
-  success: boolean;
-  message: string;
-  result?: number;
-  exact_value?: number;
-  error?: number;
-  relative_error?: number;
-  iterations: Record<string, unknown>[];
-  formula: string;
-  plot_data?: {
-    x: number[];
-    y: number[];
-    a: number;
-    b: number;
-  };
 }
 
 // Comparison
@@ -229,11 +213,6 @@ export const matrixSolverAPI = {
 export const interpolationAPI = {
   solve: (data: InterpolationRequest) =>
     api.post<InterpolationResponse>('/interpolation/', data),
-};
-
-export const integrationAPI = {
-  solve: (data: IntegrationRequest) =>
-    api.post<IntegrationResponse>('/integration/', data),
 };
 
 export const comparisonAPI = {

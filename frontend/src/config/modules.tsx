@@ -3,7 +3,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import SearchIcon from '@mui/icons-material/Search';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import LinearScaleIcon from '@mui/icons-material/LinearScale';
-import FunctionsIcon from '@mui/icons-material/Functions';
 import InfoIcon from '@mui/icons-material/Info';
 import InvertColorsIcon from '@mui/icons-material/InvertColors';
 import GridOnIcon from '@mui/icons-material/GridOn';
@@ -88,16 +87,6 @@ export const modules: ModuleEntry[] = [
     path: '/eigenvalues',
     icon: <VisibilityIcon sx={{ fontSize: 48 }} />,
     color: '#00695c',
-    showInDashboard: true,
-    showInSidebar: true,
-  },
-  {
-    text: 'Tích phân số',
-    title: 'Tích phân số',
-    description: 'Trapezoidal, Simpson 1/3, Simpson 3/8, Romberg',
-    path: '/integration',
-    icon: <FunctionsIcon sx={{ fontSize: 48 }} />,
-    color: '#283593',
     showInDashboard: true,
     showInSidebar: true,
   },

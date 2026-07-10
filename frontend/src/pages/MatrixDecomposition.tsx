@@ -6,15 +6,14 @@ import {
 import MatrixLatexEditor from '../components/MatrixLatexEditor';
 import ResultCard from '../components/ResultCard';
 import FormulaRenderer from '../components/FormulaRenderer';
+import SolutionSteps from '../components/SolutionSteps';
 
 const BASE_URL = '/matrix-decomposition';
 
 const methods = [
   { value: 'lu', label: 'LU Decomposition (A = P·L·U)' },
   { value: 'cholesky', label: 'Cholesky Decomposition (A = L·L^T)' },
-  { value: 'qr', label: 'QR Decomposition (A = Q·R)' },
   { value: 'svd', label: 'SVD Decomposition (A = U·Σ·V^T)' },
-  { value: 'schur', label: 'Schur Decomposition (A = Q·T·Q^H)' },
 ];
 
 export default function MatrixDecomposition() {
@@ -48,7 +47,7 @@ export default function MatrixDecomposition() {
       <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{label}:</Typography>
       <Box sx={{ fontFamily: 'monospace', fontSize: '0.85rem', overflowX: 'auto' }}>
         {mat.map((row, ri) => (
-          <Box key={ri}>| {row.map((v: number) => v.toFixed(6).padStart(10)).join(' ')} |</Box>
+          <Box key={ri}>| {row.map((v: number) => v.toFixed(7).padStart(10)).join(' ')} |</Box>
         ))}
       </Box>
       {latex && latex.length < 200 && <FormulaRenderer latex={latex} />}
@@ -94,9 +93,6 @@ export default function MatrixDecomposition() {
               {result.P && renderMatrix('P', result.P, result.P_latex)}
               {result.L && renderMatrix('L', result.L, result.L_latex)}
               {result.U && renderMatrix('U', result.U, result.U_latex)}
-              {result.Q && renderMatrix('Q', result.Q, result.Q_latex)}
-              {result.R && renderMatrix('R', result.R, result.R_latex)}
-              {result.T && renderMatrix('T', result.T, result.T_latex)}
               {result.Vt && renderMatrix('V^T', result.Vt, result.Vt_latex)}
               {result.singular_values && (
                 <Typography variant="body2" sx={{ mt: 1 }}>
@@ -104,22 +100,28 @@ export default function MatrixDecomposition() {
                   {' '}| rank(A) = {result.rank} | kappa(A) = {result.condition_number?.toFixed(4)}
                 </Typography>
               )}
-              {result.eigenvalues && (
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  lambda = [{result.eigenvalues.map((v: number) => v.toFixed(4)).join(', ')}]
-                </Typography>
-              )}
-              {result.is_orthogonal !== undefined && (
-                <Typography color={result.is_orthogonal ? 'success.main' : 'warning.main'}>
-                  {result.is_orthogonal ? '✅ Q^T·Q = I' : '⚠️ Q không trực giao hoàn toàn'}
-                </Typography>
+              {result.verification && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Kiểm tra (P·A so với L·U):</Typography>
+                  <Box sx={{ fontFamily: 'monospace', fontSize: '0.8rem', overflowX: 'auto' }}>
+                    {result.verification.map((row: number[], ri: number) => (
+                      <Box key={ri}>| {row.map((v: number) => v.toFixed(7).padStart(10)).join(' ')} |</Box>
+                    ))}
+                  </Box>
+                  <Typography color={result.is_accurate ? 'success.main' : 'warning.main'} sx={{ mt: 0.5, fontSize: '0.85rem' }}>
+                    {result.is_accurate ? '✅ P·A = L·U' : '⚠️ Kết quả không chính xác hoàn toàn'}
+                  </Typography>
+                </Box>
               )}
               {result.execution_time != null && (
-                <Typography variant="body2" color="text.secondary">⏱ {result.execution_time.toFixed(6)}s</Typography>
+                <Typography variant="body2" color="text.secondary">⏱ {result.execution_time.toFixed(7)}s</Typography>
               )}
             </Box>
           )}
         </ResultCard>
+      )}
+      {result?.steps && result.steps.length > 0 && (
+        <SolutionSteps steps={result.steps} method={method} />
       )}
     </Container>
   );

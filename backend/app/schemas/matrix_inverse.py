@@ -5,7 +5,10 @@ from typing import Optional, List
 
 class MatrixInverseRequest(BaseModel):
     A: List[List[float]]
-    method: str = "gauss_jordan"  # gauss_jordan, adjoint, lu, cholesky, pseudoinverse_svd
+    method: str = "gauss_jordan"  # gauss_jordan, adjoint, cholesky, bordering, jacobi, gauss_seidel, newton
+    epsilon: Optional[float] = None
+    max_iterations: Optional[int] = None
+    initial_guess: Optional[List[List[float]]] = None
 
 
 class MatrixInverseResponse(BaseModel):
@@ -21,3 +24,8 @@ class MatrixInverseResponse(BaseModel):
     is_accurate: Optional[bool] = None
     steps: Optional[List[dict]] = None
     execution_time: Optional[float] = None
+    iterations_count: Optional[int] = None
+    final_error: Optional[float] = None
+    spectral_radius: Optional[float] = None
+    converges: Optional[bool] = None
+    iterations: Optional[List[dict]] = None

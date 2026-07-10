@@ -27,4 +27,5 @@ class EigenvaluesResponse(BaseModel):
     iterations_count: int = 0
     final_error: float = 0.0
     iterations: List[dict] = []
+    steps: List[dict] = []
     execution_time: Optional[float] = None

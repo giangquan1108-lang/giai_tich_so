@@ -24,3 +24,5 @@ class NonlinearSystemResponse(BaseModel):
     iterations: List[dict] = []
     formula: str = ""
     contraction_warning: Optional[str] = None
+    stopping_criterion: Optional[str] = None
+    jacobian_properties: Optional[List[dict]] = None

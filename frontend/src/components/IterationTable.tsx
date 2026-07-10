@@ -65,14 +65,18 @@ export default function IterationTable({ data, title, headerMap }: IterationTabl
 
   // Type LaTeX in headers after render
   useEffect(() => {
-    headerRefs.current.forEach((el, key) => {
-      const latex = effectiveMap[key] || key;
-      if (latex === key) return; // No LaTeX needed
-      el.innerHTML = `\\(${latex}\\)`;
-    });
-    if (window.MathJax?.typesetPromise) {
-      const elements = Array.from(headerRefs.current.values());
-      window.MathJax.typesetPromise(elements).catch(() => {});
+    try {
+      headerRefs.current.forEach((el, key) => {
+        const latex = effectiveMap[key] || key;
+        if (latex === key) return;
+        el.innerHTML = `\\(${latex}\\)`;
+      });
+      if ((window as any).MathJax?.typesetPromise) {
+        const elements = Array.from(headerRefs.current.values());
+        (window as any).MathJax.typesetPromise(elements).catch(() => {});
+      }
+    } catch {
+      // MathJax may not be ready — degrade gracefully
     }
   }, [data, headerMap]);
 
@@ -122,14 +126,15 @@ export default function IterationTable({ data, title, headerMap }: IterationTabl
 function formatCell(value: unknown): string {
   if (value === null || value === undefined) return '-';
   if (typeof value === 'number') {
+    if (Number.isInteger(value)) return value.toString();
     if (Math.abs(value) < 1e-10) return '0';
     if (Math.abs(value) >= 1e4) return value.toExponential(6);
-    return value.toFixed(6);
+    return value.toFixed(7);
   }
   if (typeof value === 'string') return value;
   if (Array.isArray(value)) {
     if (value.every((v) => typeof v === 'number')) {
-      return `[${value.map(v => v.toFixed(4)).join(', ')}]`;
+      return `[${value.map(v => v.toFixed(7)).join(', ')}]`;
     }
     return `[${value.join(', ')}]`;
   }

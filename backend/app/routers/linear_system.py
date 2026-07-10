@@ -13,10 +13,10 @@ FORMULAS = {
     "gauss_jordan": r"[A|B] \rightarrow [I|x]",
     "lu": r"A = PLU, \quad LY = PB, \quad UX = Y",
     "cholesky": r"A = LL^T, \quad LY = B, \quad L^TX = Y",
-    "thomas": r"\text{Thomas Algorithm (TDMA): } O(n) \text{ cho ma trận ba đường chéo}",
-    "jacobi": r"x_i^{k+1} = \frac{1}{a_{ii}}\left(b_i - \sum_{j \neq i} a_{ij} x_j^k\right)",
+    "jacobi": r"x_i^{(k+1)} = \frac{1}{a_{ii}}\left(b_i - \sum_{j \neq i} a_{ij} x_j^{(k)}\right) \;\text{(hàng)}\;\text{or}\; x_i^{(k+1)} = \frac{1}{a_{ii}}\left(b_i - \sum_{j \neq i} a_{ji} x_j^{(k)}\right) \;\text{(cột)}",
     "gauss_seidel": r"x_i^{k+1} = \frac{1}{a_{ii}}\left(b_i - \sum_{j<i} a_{ij} x_j^{k+1} - \sum_{j>i} a_{ij} x_j^k\right)",
-    "sor": r"x_i^{k+1} = (1-\omega)x_i^k + \frac{\omega}{a_{ii}}\left(b_i - \sum_{j \neq i} a_{ij} x_j^{new}\right)",
+    "simple_iteration": r"x^{(k+1)} = Bx^{(k)} + d",
+    "seidel": r"x_i^{(k+1)} = \sum_{j<i} b_{ij} x_j^{(k+1)} + \sum_{j \ge i} b_{ij} x_j^{(k)} + d_i",
 }
 
 
@@ -48,8 +48,6 @@ async def solve_linear_system(request: LinearSystemRequest):
         result = linear_system.lu_decomposition(request.A, request.B)
     elif method == "cholesky":
         result = linear_system.cholesky_decomposition(request.A, request.B)
-    elif method == "thomas":
-        result = linear_system.thomas_algorithm(request.A, request.B)
     elif method == "jacobi":
         result = linear_system.jacobi(
             request.A, request.B, request.initial_guess,
@@ -60,16 +58,22 @@ async def solve_linear_system(request: LinearSystemRequest):
             request.A, request.B, request.initial_guess,
             request.epsilon, request.max_iterations,
         )
-    elif method == "sor":
-        omega = request.omega or 1.0
-        result = linear_system.sor(
-            request.A, request.B, request.initial_guess,
-            request.epsilon, request.max_iterations, omega,
+    elif method == "simple_iteration":
+        d_vec = [request.B[i][0] for i in range(m)]
+        result = linear_system.simple_iteration(
+            request.A, d_vec, request.initial_guess,
+            request.epsilon, request.max_iterations,
+        )
+    elif method == "seidel":
+        d_vec = [request.B[i][0] for i in range(m)]
+        result = linear_system.seidel(
+            request.A, d_vec, request.initial_guess,
+            request.epsilon, request.max_iterations,
         )
     else:
         return LinearSystemResponse(
             success=False,
-            message=f"Unknown method: {method}. Choose from: gaussian, gauss_jordan, lu, cholesky, thomas, jacobi, gauss_seidel, sor",
+            message=f"Unknown method: {method}. Choose from: gaussian, gauss_jordan, lu, cholesky, jacobi, gauss_seidel, simple_iteration, seidel",
         )
 
     return LinearSystemResponse(

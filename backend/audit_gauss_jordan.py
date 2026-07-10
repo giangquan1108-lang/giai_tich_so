@@ -159,7 +159,7 @@ for i_idx, i in enumerate(pivot_rows):
 
 print("\nAfter normalize:")
 for row in aug_full:
-    print(f"  {[round(v, 6) for v in row]}")
+    print(f"  {[round(v, 7) for v in row]}")
 
 # Eliminate all other rows
 for i in pivot_rows:
@@ -213,7 +213,7 @@ print("COMPARISON: Our RREF vs SymPy RREF")
 print("=" * 80)
 print("\nOur _build_infinite_result RREF:")
 for row in aug_full:
-    print(f"  {[round(v, 6) for v in row]}")
+    print(f"  {[round(v, 7) for v in row]}")
 print("\nSymPy RREF [A|B] full:")
 print(rref_full_sp)
 
